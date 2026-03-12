@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zevo Dashboard</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--tg-theme-bg-color, #0f0f17);
+    color: var(--tg-theme-text-color, #ffffff);
+    min-height: 100vh;
+    padding: 16px;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .logo {
+    font-size: 24px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #00ffe0, #0088ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .plan-badge {
+    background: rgba(0,255,224,0.1);
+    border: 1px solid rgba(0,255,224,0.3);
+    color: #00ffe0;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+
+  .biz-name {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .biz-cat {
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 24px;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 16px;
+  }
+  .stat-icon { font-size: 24px; margin-bottom: 8px; }
+  .stat-num {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+
+  .action-list { margin-bottom: 24px; }
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    text-align: left;
+    color: var(--tg-theme-text-color, #fff);
+  }
+  .action-btn:active { transform: scale(0.98); background: rgba(255,255,255,0.08); }
+  .action-icon {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .action-text { flex: 1; }
+  .action-text h4 { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+  .action-text p { font-size: 12px; color: rgba(255,255,255,0.4); }
+  .action-arrow { color: rgba(255,255,255,0.2); font-size: 18px; }
+
+  .upgrade-card {
+    background: linear-gradient(135deg, rgba(0,255,224,0.1), rgba(0,136,255,0.1));
+    border: 1px solid rgba(0,255,224,0.2);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+  }
+  .upgrade-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .upgrade-card p { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 16px; }
+  .upgrade-btn {
+    background: linear-gradient(135deg, #00ffe0, #0088ff);
+    color: #000;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 32px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  /* Screens */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .back-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    color: #00ffe0;
+    font-size: 15px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    padding: 0;
+  }
+
+  textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 14px;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    resize: none;
+    height: 120px;
+    margin-bottom: 12px;
+  }
+  textarea:focus { outline: none; border-color: rgba(0,255,224,0.4); }
+
+  .submit-btn {
+    background: linear-gradient(135deg, #00ffe0, #0088ff);
+    color: #000;
+    border: none;
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  .success-msg {
+    background: rgba(0,255,100,0.1);
+    border: 1px solid rgba(0,255,100,0.2);
+    border-radius: 12px;
+    padding: 14px;
+    color: #00ff64;
+    font-size: 14px;
+    text-align: center;
+    display: none;
+    margin-top: 12px;
+  }
+</style>
+</head>
+<body>
+
+<!-- MAIN DASHBOARD -->
+<div id="screen-main" class="screen active">
+  <div class="header">
+    <div class="logo">Zevo</div>
+    <div class="plan-badge">🆓 Free</div>
+  </div>
+
+  <div class="biz-name" id="biz-name">Мой бизнес</div>
+  <div class="biz-cat" id="biz-cat">🍕 Кафе/Ресторан</div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">💬</div>
+      <div class="stat-num" id="stat-messages">0</div>
+      <div class="stat-label">Сообщений сегодня</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">👥</div>
+      <div class="stat-num" id="stat-users">0</div>
+      <div class="stat-label">Всего клиентов</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🛒</div>
+      <div class="stat-num" id="stat-orders">0</div>
+      <div class="stat-label">Заказов</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⭐</div>
+      <div class="stat-num">5.0</div>
+      <div class="stat-label">Рейтинг бота</div>
+    </div>
+  </div>
+
+  <div class="section-title">Управление</div>
+  <div class="action-list">
+    <button class="action-btn" onclick="showScreen('screen-settings')">
+      <div class="action-icon" style="background:rgba(255,165,0,0.15)">⚙️</div>
+      <div class="action-text">
+        <h4>Настройки бота</h4>
+        <p>Меню, часы работы, контакты</p>
+      </div>
+      <span class="action-arrow">›</span>
+    </button>
+    <button class="action-btn" onclick="showScreen('screen-edit')">
+      <div class="action-icon" style="background:rgba(0,255,224,0.1)">✏️</div>
+      <div class="action-text">
+        <h4>Заказать правки</h4>
+        <p>Изменить что-то в боте</p>
+      </div>
+      <span class="action-arrow">›</span>
+    </button>
+    <button class="action-btn" onclick="copyBotLink()">
+      <div class="action-icon" style="background:rgba(0,136,255,0.15)">🔗</div>
+      <div class="action-text">
+        <h4>Ссылка на бота</h4>
+        <p>Поделиться с клиентами</p>
+      </div>
+      <span class="action-arrow">›</span>
+    </button>
+  </div>
+
+  <div class="upgrade-card">
+    <h3>🚀 Upgrade до Pro</h3>
+    <p>Снимите лимиты и получите расширенную аналитику</p>
+    <button class="upgrade-btn">Upgrade за $29/мес</button>
+  </div>
+</div>
+
+<!-- SETTINGS SCREEN -->
+<div id="screen-settings" class="screen">
+  <button class="back-btn" onclick="showScreen('screen-main')">‹ Назад</button>
+  <div class="biz-name">⚙️ Настройки бота</div>
+  <div class="biz-cat" style="margin-bottom:20px">Настройте бота под свой бизнес</div>
+
+  <div class="action-list">
+    <button class="action-btn" onclick="showScreen('screen-description')">
+      <div class="action-icon" style="background:rgba(255,100,100,0.15)">📝</div>
+      <div class="action-text"><h4>Описание бизнеса</h4><p>Что знает ваш AI о вас</p></div>
+      <span class="action-arrow">›</span>
+    </button>
+    <button class="action-btn" onclick="showScreen('screen-hours')">
+      <div class="action-icon" style="background:rgba(255,200,0,0.15)">🕐</div>
+      <div class="action-text"><h4>Часы работы</h4><p>Когда вы открыты</p></div>
+      <span class="action-arrow">›</span>
+    </button>
+    <button class="action-btn" onclick="showScreen('screen-menu')">
+      <div class="action-icon" style="background:rgba(0,255,100,0.15)">📋</div>
+      <div class="action-text"><h4>Меню / Услуги</h4><p>Что вы предлагаете</p></div>
+      <span class="action-arrow">›</span>
+    </button>
+  </div>
+</div>
+
+<!-- EDIT REQUEST SCREEN -->
+<div id="screen-edit" class="screen">
+  <button class="back-btn" onclick="showScreen('screen-main')">‹ Назад</button>
+  <div class="biz-name">✏️ Заказать правки</div>
+  <div class="biz-cat" style="margin-bottom:20px">Опишите что нужно изменить</div>
+  <textarea id="edit-text" placeholder="Например: добавить новое блюдо в меню, изменить часы работы на 9:00-22:00, добавить кнопку бронирования стола..."></textarea>
+  <button class="submit-btn" onclick="submitEdit()">Отправить заявку</button>
+  <div class="success-msg" id="edit-success">✅ Заявка отправлена! Мы свяжемся с вами в течение 24 часов.</div>
+</div>
+
+<!-- DESCRIPTION SCREEN -->
+<div id="screen-description" class="screen">
+  <button class="back-btn" onclick="showScreen('screen-settings')">‹ Назад</button>
+  <div class="biz-name">📝 Описание бизнеса</div>
+  <div class="biz-cat" style="margin-bottom:20px">AI использует это для ответов клиентам</div>
+  <textarea id="desc-text" placeholder="Расскажите о вашем бизнесе подробно: что вы предлагаете, ваши преимущества, специальные предложения..."></textarea>
+  <button class="submit-btn" onclick="saveDescription()">Сохранить</button>
+  <div class="success-msg" id="desc-success">✅ Описание сохранено!</div>
+</div>
+
+<!-- HOURS SCREEN -->
+<div id="screen-hours" class="screen">
+  <button class="back-btn" onclick="showScreen('screen-settings')">‹ Назад</button>
+  <div class="biz-name">🕐 Часы работы</div>
+  <div class="biz-cat" style="margin-bottom:20px">Укажите когда вы открыты</div>
+  <textarea id="hours-text" placeholder="Пн-Пт: 09:00 - 21:00&#10;Сб: 10:00 - 22:00&#10;Вс: выходной"></textarea>
+  <button class="submit-btn" onclick="saveHours()">Сохранить</button>
+  <div class="success-msg" id="hours-success">✅ Часы работы сохранены!</div>
+</div>
+
+<!-- MENU SCREEN -->
+<div id="screen-menu" class="screen">
+  <button class="back-btn" onclick="showScreen('screen-settings')">‹ Назад</button>
+  <div class="biz-name">📋 Меню / Услуги</div>
+  <div class="biz-cat" style="margin-bottom:20px">Что вы предлагаете клиентам</div>
+  <textarea id="menu-text" placeholder="Например:&#10;- Пицца Маргарита — 800 тг&#10;- Бургер классик — 1200 тг&#10;- Кофе латте — 500 тг"></textarea>
+  <button class="submit-btn" onclick="saveMenu()">Сохранить</button>
+  <div class="success-msg" id="menu-success">✅ Меню сохранено!</div>
+</div>
+
+<script>
+  const tg = window.Telegram.WebApp;
+  tg.ready();
+  tg.expand();
+
+  // Получаем данные из Telegram
+  const user = tg.initDataUnsafe?.user;
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function copyBotLink() {
+    const link = "https://t.me/YourBusinessBot";
+    navigator.clipboard.writeText(link).then(() => {
+      tg.showAlert("✅ Ссылка скопирована!\n\nПоделитесь ею с клиентами.");
+    });
+  }
+
+  function submitEdit() {
+    const text = document.getElementById('edit-text').value;
+    if (!text.trim()) { tg.showAlert("Опишите что нужно изменить"); return; }
+    tg.sendData(JSON.stringify({ action: 'edit_request', text }));
+    document.getElementById('edit-success').style.display = 'block';
+    document.getElementById('edit-text').value = '';
+  }
+
+  function saveDescription() {
+    const text = document.getElementById('desc-text').value;
+    if (!text.trim()) { tg.showAlert("Введите описание"); return; }
+    document.getElementById('desc-success').style.display = 'block';
+    setTimeout(() => showScreen('screen-settings'), 1500);
+  }
+
+  function saveHours() {
+    const text = document.getElementById('hours-text').value;
+    if (!text.trim()) { tg.showAlert("Введите часы работы"); return; }
+    document.getElementById('hours-success').style.display = 'block';
+    setTimeout(() => showScreen('screen-settings'), 1500);
+  }
+
+  function saveMenu() {
+    const text = document.getElementById('menu-text').value;
+    if (!text.trim()) { tg.showAlert("Введите меню или услуги"); return; }
+    document.getElementById('menu-success').style.display = 'block';
+    setTimeout(() => showScreen('screen-settings'), 1500);
+  }
+</script>
+</body>
+</html>
