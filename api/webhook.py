@@ -47,12 +47,14 @@ def kv_get(key):
 def kv_set(key, value, ex=None):
     if not KV_URL: return
     try:
-        args = [key, json.dumps(value)]
+        val = json.dumps(value)
+        cmd = ["SET", key, val]
         if ex:
-            args += ["EX", str(ex)]
+            cmd += ["EX", ex]
         req = urllib.request.Request(
-            f"{KV_URL}/set/{'/'.join(str(a) for a in args)}",
-            headers={"Authorization": f"Bearer {KV_TOKEN}"},
+            f"{KV_URL}/pipeline",
+            data=json.dumps([cmd]).encode(),
+            headers={"Authorization": f"Bearer {KV_TOKEN}", "Content-Type": "application/json"},
             method="POST"
         )
         urllib.request.urlopen(req, timeout=3)
@@ -63,8 +65,9 @@ def kv_del(key):
     if not KV_URL: return
     try:
         req = urllib.request.Request(
-            f"{KV_URL}/del/{key}",
-            headers={"Authorization": f"Bearer {KV_TOKEN}"},
+            f"{KV_URL}/pipeline",
+            data=json.dumps([["DEL", key]]).encode(),
+            headers={"Authorization": f"Bearer {KV_TOKEN}", "Content-Type": "application/json"},
             method="POST"
         )
         urllib.request.urlopen(req, timeout=3)
