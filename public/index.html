@@ -5,536 +5,134 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Zevo</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg1: #060612;
-  --bg2: #0d0d22;
-  --glass: rgba(255,255,255,0.055);
-  --glass-border: rgba(255,255,255,0.10);
-  --glass-hover: rgba(255,255,255,0.09);
-  --accent: #00f5a0;
-  --accent2: #00c9ff;
-  --accent3: #a78bfa;
-  --text: #f0f0ff;
-  --muted: rgba(240,240,255,0.38);
-  --r: 20px;
-}
+:root{--bg:#07070f;--glass:rgba(255,255,255,0.055);--border:rgba(255,255,255,0.09);--text:#f0f0ff;--muted:rgba(240,240,255,0.38);--green:#00f5a0;--blue:#00c9ff;--purple:#a78bfa;--red:#ff6b6b;--r:18px}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+.bg{position:fixed;inset:0;z-index:0;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:0.13;animation:float 14s ease-in-out infinite}
+.orb1{width:500px;height:500px;background:var(--green);top:-150px;left:-150px}
+.orb2{width:400px;height:400px;background:var(--blue);bottom:-100px;right:-100px;animation-delay:-5s}
+.orb3{width:300px;height:300px;background:var(--purple);top:50%;left:40%;animation-delay:-10s}
+@keyframes float{0%,100%{transform:translate(0,0)}33%{transform:translate(25px,-20px)}66%{transform:translate(-15px,25px)}}
+.grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0.03;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.app{position:relative;z-index:2;display:none;flex-direction:column;min-height:100vh}
+.app.ready{display:flex}
+.loader{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:var(--bg)}
+.loader-logo{font-family:'Syne',sans-serif;font-size:44px;font-weight:800;background:linear-gradient(120deg,var(--green),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.dots{display:flex;gap:7px}
+.dots span{width:7px;height:7px;border-radius:50%;background:var(--green);animation:dot 1.2s ease-in-out infinite}
+.dots span:nth-child(2){animation-delay:.2s;background:var(--blue)}
+.dots span:nth-child(3){animation-delay:.4s;background:var(--purple)}
+@keyframes dot{0%,100%{transform:scale(1);opacity:.4}50%{transform:scale(1.5);opacity:1}}
+.loader.hide{animation:fadeOut .4s forwards}
+@keyframes fadeOut{to{opacity:0;pointer-events:none}}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 0}
+.logo{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;background:linear-gradient(120deg,var(--green),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.5px}
+.badge{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:5px 12px;border-radius:20px}
+.badge-admin{background:rgba(167,139,250,0.15);color:var(--purple);border:1px solid rgba(167,139,250,0.3)}
+.badge-client{background:rgba(0,245,160,0.1);color:var(--green);border:1px solid rgba(0,245,160,0.2)}
+.tabs{display:flex;gap:6px;padding:14px 18px 0;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{font-family:'Syne',sans-serif;font-size:12px;font-weight:600;padding:8px 16px;border-radius:20px;border:1px solid var(--border);background:var(--glass);color:var(--muted);cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.tab.active{background:linear-gradient(135deg,rgba(0,245,160,0.15),rgba(0,201,255,0.15));border-color:rgba(0,245,160,0.3);color:var(--green)}
+.tab.active-purple{background:linear-gradient(135deg,rgba(167,139,250,0.15),rgba(0,201,255,0.15));border-color:rgba(167,139,250,0.3);color:var(--purple)}
+.content{flex:1;padding:16px 18px 30px}
+.screen{display:none;animation:slideIn .22s ease}
+.screen.active{display:block}
+@keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.card{background:var(--glass);border:1px solid var(--border);border-radius:var(--r);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);position:relative;overflow:hidden;margin-bottom:10px}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,245,160,0.4),transparent)}
+.card.purple::before{background:linear-gradient(90deg,transparent,rgba(167,139,250,0.4),transparent)}
+.card-p{padding:18px}
+.section-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-left:2px}
+.biz-header{padding:20px}
+.biz-avatar{width:50px;height:50px;border-radius:14px;background:linear-gradient(135deg,var(--green),var(--blue));display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:10px}
+.biz-name{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;letter-spacing:-.5px;margin-bottom:3px}
+.biz-meta{font-size:12px;color:var(--muted)}
+.status-dot{display:inline-flex;align-items:center;gap:5px;font-size:11px;margin-top:6px;padding:3px 10px;border-radius:20px}
+.status-active{color:var(--green);background:rgba(0,245,160,0.08);border:1px solid rgba(0,245,160,0.15)}
+.status-active::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2s infinite}
+.status-pending{color:#fbbf24;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.stat-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--r);padding:16px;backdrop-filter:blur(20px);position:relative;overflow:hidden}
+.accent-line{position:absolute;bottom:0;left:0;right:0;height:2px}
+.stat-icon{font-size:18px;margin-bottom:8px;display:block}
+.stat-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1;letter-spacing:-1px;margin-bottom:3px}
+.stat-lbl{font-size:10px;color:var(--muted);font-weight:500;letter-spacing:.5px;text-transform:uppercase}
+.fill-bar-wrap{padding:16px}
+.fill-bar-top{display:flex;justify-content:space-between;margin-bottom:6px}
+.fill-bar-label{font-size:12px;color:var(--muted)}
+.fill-bar-pct{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--green)}
+.fill-bar{height:4px;background:var(--border);border-radius:4px;overflow:hidden}
+.fill-bar-inner{height:100%;background:linear-gradient(90deg,var(--green),var(--blue));border-radius:4px;transition:width .6s cubic-bezier(.25,.46,.45,.94)}
 
-* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+/* EDIT FIELDS */
+.field-group{margin-bottom:12px}
+.field-label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;font-weight:500;letter-spacing:.3px}
+textarea,.field-input{width:100%;background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;resize:none;outline:none;transition:border-color .2s;line-height:1.5;backdrop-filter:blur(10px)}
+textarea{height:100px}
+textarea:focus,.field-input:focus{border-color:rgba(0,245,160,0.4)}
+textarea::placeholder,.field-input::placeholder{color:var(--muted);font-size:12px}
 
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--bg1);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
+/* BUTTONS */
+.btn{width:100%;padding:14px;border-radius:14px;border:none;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.3px}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:linear-gradient(135deg,var(--green),var(--blue));color:#000;box-shadow:0 6px 24px rgba(0,245,160,0.2);margin-bottom:8px}
+.btn-ghost{background:var(--glass);color:var(--text);border:1px solid var(--border);backdrop-filter:blur(10px);margin-bottom:8px}
+.btn-danger{background:rgba(255,107,107,0.1);color:var(--red);border:1px solid rgba(255,107,107,0.2)}
+.btn-purple{background:linear-gradient(135deg,rgba(167,139,250,0.3),rgba(0,201,255,0.3));color:var(--text);border:1px solid rgba(167,139,250,0.3)}
 
-/* ── Animated background ── */
-.bg {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-}
-.orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.18;
-  animation: float 12s ease-in-out infinite;
-}
-.orb1 { width:420px; height:420px; background:var(--accent); top:-100px; left:-100px; animation-delay:0s; }
-.orb2 { width:350px; height:350px; background:var(--accent2); bottom:-80px; right:-80px; animation-delay:-4s; }
-.orb3 { width:280px; height:280px; background:var(--accent3); top:40%; left:30%; animation-delay:-8s; }
-@keyframes float {
-  0%,100% { transform: translate(0,0) scale(1); }
-  33%      { transform: translate(30px,-20px) scale(1.05); }
-  66%      { transform: translate(-20px,30px) scale(0.95); }
-}
+/* CLIENT LIST (ADMIN) */
+.client-item{display:flex;align-items:center;gap:12px;padding:14px;background:var(--glass);border:1px solid var(--border);border-radius:var(--r);backdrop-filter:blur(20px);margin-bottom:8px;cursor:pointer;transition:all .15s}
+.client-item:active{transform:scale(.98)}
+.client-ico{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,rgba(0,245,160,0.1),rgba(0,201,255,0.1));border:1px solid rgba(0,245,160,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.client-info{flex:1;min-width:0}
+.client-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.client-meta{font-size:11px;color:var(--muted)}
+.client-status{font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;flex-shrink:0}
+.s-active{background:rgba(0,245,160,0.1);color:var(--green)}
+.s-pending{background:rgba(251,191,36,0.1);color:#fbbf24}
+.s-blocked{background:rgba(255,107,107,0.1);color:var(--red)}
 
-/* ── Grain overlay ── */
-.grain {
-  position: fixed; inset:0; z-index:1; pointer-events:none; opacity:0.035;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-}
+/* DETAIL VIEW */
+.back-btn{display:inline-flex;align-items:center;gap:6px;background:var(--glass);border:1px solid var(--border);border-radius:12px;color:var(--green);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;padding:8px 14px;margin-bottom:14px;backdrop-filter:blur(10px)}
+.info-row{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)}
+.info-row:last-child{border-bottom:none}
+.info-key{font-size:12px;color:var(--muted);flex-shrink:0;margin-right:10px}
+.info-val{font-size:12px;font-weight:500;text-align:right;line-height:1.4;max-width:200px;word-break:break-word}
+.info-val.empty{color:var(--muted);font-style:italic}
 
-/* ── App layout ── */
-.app { position:relative; z-index:2; display:none; flex-direction:column; min-height:100vh; }
-.app.ready { display:flex; }
+/* LINK BOX */
+.link-box{background:rgba(0,245,160,0.06);border:1px solid rgba(0,245,160,0.15);border-radius:12px;padding:12px 14px;font-family:monospace;font-size:12px;color:var(--green);word-break:break-all;margin:10px 0;cursor:pointer}
 
-/* ── Topbar ── */
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 20px 0;
-}
-.logo {
-  font-family: 'Syne', sans-serif;
-  font-size: 26px;
-  font-weight: 800;
-  background: linear-gradient(120deg, var(--accent), var(--accent2));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  letter-spacing: -1px;
-}
-.plan-chip {
-  font-family: 'Syne', sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  padding: 6px 14px;
-  border-radius: 20px;
-  background: rgba(0,245,160,0.1);
-  color: var(--accent);
-  border: 1px solid rgba(0,245,160,0.25);
-  backdrop-filter: blur(10px);
-}
-
-.content { flex:1; padding: 22px 18px 30px; }
-
-/* ── Screens ── */
-.screen { display:none; }
-.screen.active { display:block; animation: slideIn 0.25s cubic-bezier(.25,.46,.45,.94); }
-@keyframes slideIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
-
-/* ── Biz header ── */
-.biz-header {
-  margin-bottom: 20px;
-  padding: 22px;
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--r);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  position: relative;
-  overflow: hidden;
-}
-.biz-header::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0,245,160,0.5), transparent);
-}
-.biz-name {
-  font-family: 'Syne', sans-serif;
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  margin-bottom: 4px;
-}
-.biz-meta { font-size: 13px; color: var(--muted); }
-
-/* ── Stats grid ── */
-.stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
-.stat {
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--r);
-  padding: 18px 16px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  position: relative;
-  overflow: hidden;
-  transition: transform 0.2s, background 0.2s;
-}
-.stat:active { transform: scale(0.97); }
-.stat::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--accent), var(--accent2));
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-.stat:hover::after { opacity: 1; }
-.stat-icon { font-size: 20px; margin-bottom: 10px; display:block; }
-.stat-val {
-  font-family: 'Syne', sans-serif;
-  font-size: 34px;
-  font-weight: 800;
-  line-height: 1;
-  margin-bottom: 4px;
-  letter-spacing: -1.5px;
-  background: linear-gradient(135deg, #fff, rgba(255,255,255,0.7));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-.stat-lbl { font-size: 11px; color: var(--muted); font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; }
-
-/* ── Section title ── */
-.section-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 10px;
-  padding-left: 4px;
-}
-
-/* ── Actions ── */
-.actions { display:flex; flex-direction:column; gap:8px; margin-bottom:20px; }
-.action {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--r);
-  padding: 15px 16px;
-  cursor: pointer;
-  transition: all 0.18s;
-  text-align: left;
-  color: var(--text);
-  width: 100%;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  position: relative;
-  overflow: hidden;
-}
-.action::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(0,245,160,0.05), transparent);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-.action:active { transform:scale(0.98); background: var(--glass-hover); }
-.action:active::before { opacity: 1; }
-.action-ico {
-  width: 42px; height: 42px;
-  border-radius: 13px;
-  display: flex; align-items:center; justify-content:center;
-  font-size: 19px;
-  flex-shrink: 0;
-  backdrop-filter: blur(10px);
-}
-.action-info { flex:1; }
-.action-info h4 { font-family:'Syne',sans-serif; font-size: 14px; font-weight: 600; margin-bottom: 2px; }
-.action-info p  { font-size: 12px; color: var(--muted); }
-.action-arr { color: var(--muted); font-size: 18px; }
-
-/* ── Bot link card ── */
-.bot-card {
-  background: linear-gradient(135deg, rgba(0,245,160,0.08), rgba(0,201,255,0.08));
-  border: 1px solid rgba(0,245,160,0.2);
-  border-radius: var(--r);
-  padding: 20px;
-  text-align: center;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  position: relative;
-  overflow: hidden;
-}
-.bot-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0,245,160,0.6), transparent);
-}
-.bot-card h3 {
-  font-family: 'Syne', sans-serif;
-  font-size: 15px; font-weight: 700; margin-bottom: 6px;
-}
-.bot-card p { font-size: 12px; color: var(--muted); margin-bottom: 16px; line-height:1.5; }
-
-/* ── Buttons ── */
-.btn {
-  width: 100%;
-  padding: 15px;
-  border-radius: 14px;
-  border: none;
-  font-family: 'Syne', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.18s;
-  letter-spacing: 0.3px;
-}
-.btn:active { transform: scale(0.97); }
-.btn-primary {
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  color: #000;
-  box-shadow: 0 8px 30px rgba(0,245,160,0.25);
-}
-.btn-primary:active { box-shadow: 0 4px 15px rgba(0,245,160,0.15); }
-.btn-ghost {
-  background: var(--glass);
-  color: var(--text);
-  border: 1px solid var(--glass-border);
-  backdrop-filter: blur(10px);
-}
-
-/* ── Back button ── */
-.back {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  color: var(--accent);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 8px 16px;
-  margin-bottom: 20px;
-  backdrop-filter: blur(10px);
-  transition: all 0.15s;
-}
-.back:active { transform: scale(0.97); }
-
-/* ── Screen title ── */
-.screen-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 22px; font-weight: 800;
-  letter-spacing: -0.5px; margin-bottom: 4px;
-}
-.screen-sub { font-size: 13px; color: var(--muted); margin-bottom: 22px; line-height: 1.5; }
-
-/* ── Textarea ── */
-.input-wrap { margin-bottom: 14px; }
-textarea, input[type=text] {
-  width: 100%;
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
-  border-radius: 14px;
-  padding: 14px 16px;
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  resize: none;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  line-height: 1.6;
-  backdrop-filter: blur(10px);
-}
-textarea { height: 130px; }
-textarea:focus, input[type=text]:focus {
-  border-color: rgba(0,245,160,0.4);
-  box-shadow: 0 0 0 3px rgba(0,245,160,0.08);
-}
-textarea::placeholder, input::placeholder { color: var(--muted); }
-
-/* ── Toast ── */
-.toast {
-  position: fixed;
-  bottom: 28px; left: 18px; right: 18px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  color: #000;
-  padding: 14px 20px;
-  border-radius: 14px;
-  font-family: 'Syne', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  text-align: center;
-  transform: translateY(80px);
-  opacity: 0;
-  transition: all 0.35s cubic-bezier(.175,.885,.32,1.275);
-  z-index: 999;
-  box-shadow: 0 10px 40px rgba(0,245,160,0.3);
-}
-.toast.show { transform: translateY(0); opacity: 1; }
-
-/* ── Loader ── */
-.loader {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  gap: 20px;
-  position: relative;
-  z-index: 10;
-}
-.loader-logo {
-  font-family: 'Syne', sans-serif;
-  font-size: 42px; font-weight: 800;
-  background: linear-gradient(120deg, var(--accent), var(--accent2));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: pulse 1.5s ease-in-out infinite;
-}
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
-.loader-dots { display:flex; gap:6px; }
-.loader-dots span {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  animation: dot 1.2s ease-in-out infinite;
-}
-.loader-dots span:nth-child(2) { animation-delay:.2s; background:var(--accent2); }
-.loader-dots span:nth-child(3) { animation-delay:.4s; background:var(--accent3); }
-@keyframes dot { 0%,100%{transform:scale(1);opacity:0.5} 50%{transform:scale(1.4);opacity:1} }
-
-/* ── Stagger animation ── */
-.stagger > * {
-  opacity: 0;
-  transform: translateY(12px);
-  animation: reveal 0.4s forwards;
-}
-.stagger > *:nth-child(1) { animation-delay: 0.05s; }
-.stagger > *:nth-child(2) { animation-delay: 0.10s; }
-.stagger > *:nth-child(3) { animation-delay: 0.15s; }
-.stagger > *:nth-child(4) { animation-delay: 0.20s; }
-.stagger > *:nth-child(5) { animation-delay: 0.25s; }
-.stagger > *:nth-child(6) { animation-delay: 0.30s; }
-@keyframes reveal { to { opacity:1; transform:none; } }
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:18px;right:18px;background:linear-gradient(135deg,var(--green),var(--blue));color:#000;padding:13px 18px;border-radius:14px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;text-align:center;transform:translateY(80px);opacity:0;transition:all .35s cubic-bezier(.175,.885,.32,1.275);z-index:999}
+.toast.show{transform:translateY(0);opacity:1}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-state .ico{font-size:36px;margin-bottom:10px}
+.empty-state h3{font-family:'Syne',sans-serif;font-size:15px;color:var(--text);margin-bottom:6px}
 </style>
 </head>
 <body>
-
-<div class="bg">
-  <div class="orb orb1"></div>
-  <div class="orb orb2"></div>
-  <div class="orb orb3"></div>
-</div>
+<div class="bg"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
 <div class="grain"></div>
 
 <div class="loader" id="loader">
   <div class="loader-logo">Zevo</div>
-  <div class="loader-dots"><span></span><span></span><span></span></div>
+  <div class="dots"><span></span><span></span><span></span></div>
 </div>
 
 <div class="app" id="app">
   <div class="topbar">
     <div class="logo">Zevo</div>
-    <div class="plan-chip" id="plan-chip">🆓 Free</div>
+    <div class="badge" id="role-badge">...</div>
   </div>
-  <div class="content">
-
-    <!-- HOME -->
-    <div class="screen active" id="s-home">
-      <div class="stagger">
-        <div class="biz-header">
-          <div class="biz-name" id="biz-name">Мой бизнес</div>
-          <div class="biz-meta" id="biz-meta">🍕 Кафе / Ресторан</div>
-        </div>
-
-        <div class="stats">
-          <div class="stat">
-            <span class="stat-icon">💬</span>
-            <div class="stat-val" id="s-today">0</div>
-            <div class="stat-lbl">Сегодня</div>
-          </div>
-          <div class="stat">
-            <span class="stat-icon">👥</span>
-            <div class="stat-val" id="s-users">0</div>
-            <div class="stat-lbl">Клиентов</div>
-          </div>
-          <div class="stat">
-            <span class="stat-icon">🛒</span>
-            <div class="stat-val" id="s-orders">0</div>
-            <div class="stat-lbl">Заказов</div>
-          </div>
-          <div class="stat">
-            <span class="stat-icon">⭐</span>
-            <div class="stat-val">5.0</div>
-            <div class="stat-lbl">Рейтинг</div>
-          </div>
-        </div>
-
-        <div class="section-title">Управление</div>
-        <div class="actions">
-          <button class="action" onclick="go('s-settings')">
-            <div class="action-ico" style="background:rgba(255,200,80,0.12)">⚙️</div>
-            <div class="action-info"><h4>Настройки бота</h4><p>Меню, часы, описание</p></div>
-            <span class="action-arr">›</span>
-          </button>
-          <button class="action" onclick="go('s-edit')">
-            <div class="action-ico" style="background:rgba(0,245,160,0.1)">✏️</div>
-            <div class="action-info"><h4>Заказать правки</h4><p>Изменить что-то в боте</p></div>
-            <span class="action-arr">›</span>
-          </button>
-        </div>
-
-        <div class="bot-card">
-          <h3>🤖 Ваш бот</h3>
-          <p>Поделитесь ссылкой с клиентами — они смогут писать боту прямо в Telegram</p>
-          <button class="btn btn-primary" onclick="copyLink()">🔗 Скопировать ссылку</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- SETTINGS -->
-    <div class="screen" id="s-settings">
-      <button class="back" onclick="go('s-home')">‹ Назад</button>
-      <div class="screen-title">⚙️ Настройки</div>
-      <div class="screen-sub">Настройте бота под свой бизнес</div>
-      <div class="actions stagger">
-        <button class="action" onclick="go('s-desc')">
-          <div class="action-ico" style="background:rgba(255,100,100,0.12)">📝</div>
-          <div class="action-info"><h4>Описание бизнеса</h4><p>Что знает AI о вас</p></div>
-          <span class="action-arr">›</span>
-        </button>
-        <button class="action" onclick="go('s-hours')">
-          <div class="action-ico" style="background:rgba(255,200,80,0.12)">🕐</div>
-          <div class="action-info"><h4>Часы работы</h4><p>Когда вы открыты</p></div>
-          <span class="action-arr">›</span>
-        </button>
-        <button class="action" onclick="go('s-menu')">
-          <div class="action-ico" style="background:rgba(0,245,160,0.1)">📋</div>
-          <div class="action-info"><h4>Меню / Услуги</h4><p>Что вы предлагаете</p></div>
-          <span class="action-arr">›</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- EDIT REQUEST -->
-    <div class="screen" id="s-edit">
-      <button class="back" onclick="go('s-home')">‹ Назад</button>
-      <div class="screen-title">✏️ Правки</div>
-      <div class="screen-sub">Опишите что нужно изменить в вашем боте</div>
-      <div class="input-wrap">
-        <textarea id="edit-txt" placeholder="Например: добавить новые блюда, изменить часы работы, добавить кнопку бронирования..."></textarea>
-      </div>
-      <button class="btn btn-primary" onclick="submitEdit()">Отправить заявку</button>
-    </div>
-
-    <!-- DESCRIPTION -->
-    <div class="screen" id="s-desc">
-      <button class="back" onclick="go('s-settings')">‹ Назад</button>
-      <div class="screen-title">📝 Описание</div>
-      <div class="screen-sub">AI использует это для ответов клиентам</div>
-      <div class="input-wrap">
-        <textarea id="desc-txt" placeholder="Расскажите о вашем бизнесе: что предлагаете, ваши преимущества..."></textarea>
-      </div>
-      <button class="btn btn-primary" onclick="save('desc-txt','s-settings','Описание сохранено!')">Сохранить</button>
-    </div>
-
-    <!-- HOURS -->
-    <div class="screen" id="s-hours">
-      <button class="back" onclick="go('s-settings')">‹ Назад</button>
-      <div class="screen-title">🕐 Часы работы</div>
-      <div class="screen-sub">Когда вы открыты для клиентов</div>
-      <div class="input-wrap">
-        <textarea id="hours-txt" placeholder="Пн–Пт: 09:00 – 21:00&#10;Сб:      10:00 – 22:00&#10;Вс:      выходной"></textarea>
-      </div>
-      <button class="btn btn-primary" onclick="save('hours-txt','s-settings','Часы работы сохранены!')">Сохранить</button>
-    </div>
-
-    <!-- MENU -->
-    <div class="screen" id="s-menu">
-      <button class="back" onclick="go('s-settings')">‹ Назад</button>
-      <div class="screen-title">📋 Меню / Услуги</div>
-      <div class="screen-sub">Что вы предлагаете клиентам</div>
-      <div class="input-wrap">
-        <textarea id="menu-txt" placeholder="Пицца Маргарита — 800 сум&#10;Бургер — 1200 сум&#10;Кофе латте — 500 сум"></textarea>
-      </div>
-      <button class="btn btn-primary" onclick="save('menu-txt','s-settings','Меню сохранено!')">Сохранить</button>
-    </div>
-
-  </div>
+  <div class="tabs" id="tabs"></div>
+  <div class="content" id="main-content"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -543,58 +141,399 @@ textarea::placeholder, input::placeholder { color: var(--muted); }
 const tg = window.Telegram?.WebApp;
 if (tg) { tg.ready(); tg.expand(); }
 
-const biz = { name:"Мой бизнес", meta:"🍕 Кафе / Ресторан", plan:"🆓 Free", today:0, users:0, orders:0 };
+const ADMIN_ID = 7732138103;
+const uid = tg?.initDataUnsafe?.user?.id || null;
+const API = 'https://zevo-iota.vercel.app';
 
-function init() {
-  document.getElementById('biz-name').textContent  = biz.name;
-  document.getElementById('biz-meta').textContent  = biz.meta;
-  document.getElementById('plan-chip').textContent = biz.plan;
-  document.getElementById('s-today').textContent   = biz.today;
-  document.getElementById('s-users').textContent   = biz.users;
-  document.getElementById('s-orders').textContent  = biz.orders;
+let userData = null;
+let isAdmin = uid === ADMIN_ID;
+let allClients = [];
+let selectedClient = null;
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    if (uid) {
+      const res = await fetch(`${API}/api/miniapp?uid=${uid}`);
+      userData = await res.json();
+    } else {
+      userData = { name:'Демо', category:'🍕 Кафе', plan:'free', registered:true, stats:{today:0,total:0,users:0,orders:0} };
+    }
+  } catch(e) {
+    userData = { name:'Демо', category:'🍕 Кафе', plan:'free', registered:true, stats:{today:0,total:0,users:0,orders:0} };
+  }
+
+  if (isAdmin) {
+    await loadClients();
+    renderAdmin();
+  } else {
+    renderClient();
+  }
+
   setTimeout(() => {
-    document.getElementById('loader').style.display = 'none';
-    document.getElementById('app').classList.add('ready');
-  }, 900);
+    document.getElementById('loader').classList.add('hide');
+    setTimeout(() => {
+      document.getElementById('loader').style.display = 'none';
+      document.getElementById('app').classList.add('ready');
+    }, 400);
+  }, 700);
 }
 
-function go(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  window.scrollTo({top:0, behavior:'smooth'});
+async function loadClients() {
+  try {
+    const res = await fetch(`${API}/api/miniapp?admin=1&uid=${uid}`);
+    const data = await res.json();
+    allClients = data.clients || [];
+  } catch(e) { allClients = []; }
 }
 
-function toast(msg, ms=2500) {
+// ── ADMIN VIEW ────────────────────────────────────────────────────────────────
+function renderAdmin() {
+  document.getElementById('role-badge').className = 'badge badge-admin';
+  document.getElementById('role-badge').textContent = '👑 ADMIN';
+
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = `
+    <div class="tab active-purple" id="tab-btn-clients" onclick="adminTab('clients')">👥 Клиенты</div>
+    <div class="tab" id="tab-btn-stats" onclick="adminTab('stats')">📊 Статистика</div>
+    <div class="tab" id="tab-btn-mybot" onclick="adminTab('mybot')">🤖 Мой бот</div>
+  `;
+
+  adminTab('clients');
+}
+
+function adminTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active','active-purple'));
+  document.getElementById(`tab-btn-${name}`)?.classList.add('active-purple');
+
+  const content = document.getElementById('main-content');
+
+  if (name === 'clients') {
+    content.innerHTML = `
+      <div class="section-title">Все клиенты (${allClients.length})</div>
+      <div id="clients-list"></div>
+    `;
+    renderClientsList();
+
+  } else if (name === 'stats') {
+    const total = allClients.length;
+    const active = allClients.filter(c => !c.blocked && c.bot_link).length;
+    const pending = allClients.filter(c => !c.bot_link).length;
+    const revenue = active * 19;
+    content.innerHTML = `
+      <div class="section-title">Общая статистика</div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="accent-line" style="background:linear-gradient(90deg,var(--purple),var(--blue))"></div>
+          <span class="stat-icon">👥</span>
+          <div class="stat-val">${total}</div>
+          <div class="stat-lbl">Клиентов</div>
+        </div>
+        <div class="stat-card">
+          <div class="accent-line" style="background:linear-gradient(90deg,var(--green),var(--blue))"></div>
+          <span class="stat-icon">✅</span>
+          <div class="stat-val">${active}</div>
+          <div class="stat-lbl">Активных</div>
+        </div>
+        <div class="stat-card">
+          <div class="accent-line" style="background:linear-gradient(90deg,#fbbf24,var(--red))"></div>
+          <span class="stat-icon">⏳</span>
+          <div class="stat-val">${pending}</div>
+          <div class="stat-lbl">Ожидают</div>
+        </div>
+        <div class="stat-card">
+          <div class="accent-line" style="background:linear-gradient(90deg,var(--green),var(--purple))"></div>
+          <span class="stat-icon">💰</span>
+          <div class="stat-val">$${revenue}</div>
+          <div class="stat-lbl">Доход/мес</div>
+        </div>
+      </div>
+      <div class="card card-p">
+        <div class="section-title">Тарифы клиентов</div>
+        ${['free','basic','pro'].map(p => {
+          const count = allClients.filter(c => c.plan === p).length;
+          const emoji = {free:'🆓',basic:'⚡',pro:'🚀'}[p];
+          return `<div class="info-row"><span class="info-key">${emoji} ${p.charAt(0).toUpperCase()+p.slice(1)}</span><span class="info-val">${count} клиентов</span></div>`;
+        }).join('')}
+      </div>
+    `;
+
+  } else if (name === 'mybot') {
+    const d = userData || {};
+    content.innerHTML = `
+      <div class="card"><div class="biz-header">
+        <div class="biz-avatar">⚡</div>
+        <div class="biz-name">Zevo Platform</div>
+        <div class="biz-meta">Администратор</div>
+        <div class="status-dot status-active">● Активен</div>
+      </div></div>
+      <div class="card card-p">
+        <div class="info-row"><span class="info-key">Клиентов</span><span class="info-val">${allClients.length}</span></div>
+        <div class="info-row"><span class="info-key">Активных ботов</span><span class="info-val">${allClients.filter(c=>c.bot_link).length}</span></div>
+        <div class="info-row"><span class="info-key">Доход/мес</span><span class="info-val">$${allClients.filter(c=>!c.blocked&&c.bot_link).length * 19}</span></div>
+      </div>
+    `;
+  }
+}
+
+function renderClientsList() {
+  const list = document.getElementById('clients-list');
+  if (!allClients.length) {
+    list.innerHTML = `<div class="empty-state"><div class="ico">👥</div><h3>Клиентов пока нет</h3><p>Они появятся после регистрации в боте</p></div>`;
+    return;
+  }
+  list.innerHTML = allClients.map((c, i) => {
+    const status = c.blocked ? 'blocked' : (c.bot_link ? 'active' : 'pending');
+    const statusLabel = {active:'✅ Активен', pending:'⏳ Ожидает', blocked:'⛔ Заблокирован'}[status];
+    const statusClass = {active:'s-active', pending:'s-pending', blocked:'s-blocked'}[status];
+    const emoji = getCatEmoji(c.category || '');
+    return `
+      <div class="client-item" onclick="openClient(${i})">
+        <div class="client-ico">${emoji}</div>
+        <div class="client-info">
+          <div class="client-name">${c.name || 'Без названия'}</div>
+          <div class="client-meta">${c.category || '—'} • ${({free:'🆓 Free',basic:'⚡ Basic',pro:'🚀 Pro'})[c.plan]||'🆓 Free'}</div>
+        </div>
+        <div class="client-status ${statusClass}">${statusLabel}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openClient(i) {
+  selectedClient = allClients[i];
+  const c = selectedClient;
+  const content = document.getElementById('main-content');
+  const status = c.blocked ? '⛔ Заблокирован' : (c.bot_link ? '✅ Активен' : '⏳ Ожидает бота');
+
+  const fields = [
+    ['Название', c.name],['Категория', c.category],['Тариф', c.plan],
+    ['Описание', c.description],['Меню', c.info_menu],['Часы', c.info_hours],
+    ['Адрес', c.info_location],['Контакты', c.info_contacts],['Акции', c.info_promo],['FAQ', c.info_faq],
+  ];
+
+  content.innerHTML = `
+    <button class="back-btn" onclick="adminTab('clients')">‹ Назад</button>
+    <div class="card"><div class="biz-header">
+      <div class="biz-avatar">${getCatEmoji(c.category||'')}</div>
+      <div class="biz-name">${c.name||'Без названия'}</div>
+      <div class="biz-meta">${c.category||'—'}</div>
+      <div class="status-dot ${c.blocked?'status-pending':'status-active'}">${status}</div>
+    </div></div>
+
+    ${c.bot_link ? `
+    <div class="card card-p">
+      <div class="section-title">Ссылка бота</div>
+      <div class="link-box" onclick="copyText('${c.bot_link}')">${c.bot_link}</div>
+    </div>` : `
+    <div class="card card-p" style="border-color:rgba(251,191,36,0.2)">
+      <div class="section-title">⏳ Бот не готов</div>
+      <p style="font-size:12px;color:var(--muted)">Отправьте ссылку бота клиенту через Telegram бота</p>
+    </div>`}
+
+    <div class="card card-p">
+      <div class="section-title">Данные ТЗ</div>
+      ${fields.map(([k,v]) => `
+        <div class="info-row">
+          <span class="info-key">${k}</span>
+          <span class="info-val ${v?'':'empty'}">${v ? v.substring(0,60)+(v.length>60?'...':'') : 'не заполнено'}</span>
+        </div>`).join('')}
+    </div>
+
+    <div class="card card-p">
+      <div class="section-title">Статистика</div>
+      ${[['💬 Сегодня', c.stats?.today||0],['📨 Всего', c.stats?.total||0],['👥 Клиентов', c.stats?.users||0]].map(([k,v])=>`
+        <div class="info-row"><span class="info-key">${k}</span><span class="info-val">${v}</span></div>`).join('')}
+    </div>
+  `;
+}
+
+// ── CLIENT VIEW ───────────────────────────────────────────────────────────────
+function renderClient() {
+  const d = userData || {};
+  document.getElementById('role-badge').className = 'badge badge-client';
+  document.getElementById('role-badge').textContent = ({free:'🆓 FREE',basic:'⚡ BASIC',pro:'🚀 PRO'})[d.plan] || '🆓 FREE';
+
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = `
+    <div class="tab active" id="tab-btn-dash" onclick="clientTab('dash')">📊 Дашборд</div>
+    <div class="tab" id="tab-btn-edit" onclick="clientTab('edit')">✏️ Редактировать</div>
+    <div class="tab" id="tab-btn-bot" onclick="clientTab('bot')">🤖 Мой бот</div>
+  `;
+
+  clientTab('dash');
+}
+
+function clientTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`tab-btn-${name}`)?.classList.add('active');
+
+  const content = document.getElementById('main-content');
+  const d = userData || {};
+  const s = d.stats || {};
+
+  if (name === 'dash') {
+    const fields = ['info_menu','info_hours','info_location','info_contacts','info_promo','info_faq'];
+    const filled = fields.filter(f => d[f]).length;
+    const pct = Math.round(filled/fields.length*100);
+
+    content.innerHTML = `
+      <div class="card"><div class="biz-header">
+        <div class="biz-avatar">${getCatEmoji(d.category||'')}</div>
+        <div class="biz-name">${d.name||'Мой бизнес'}</div>
+        <div class="biz-meta">${d.category||'—'}</div>
+        <div class="status-dot ${d.bot_link?'status-active':'status-pending'}">
+          ${d.bot_link ? '● Бот активен' : '⏳ Бот готовится'}
+        </div>
+      </div></div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="accent-line" style="background:linear-gradient(90deg,var(--green),var(--blue))"></div>
+          <span class="stat-icon">💬</span>
+          <div class="stat-val">${s.today||0}</div>
+          <div class="stat-lbl">Сегодня</div>
+        </div>
+        <div class="stat-card">
+          <div class="accent-line" style="background:linear-gradient(90deg,var(--blue),var(--purple))"></div>
+          <span class="stat-icon">📨</span>
+          <div class="stat-val">${s.total||0}</div>
+          <div class="stat-lbl">Всего</div>
+        </div>
+        <div class="stat-card">
+          <div class="accent-line" style="background:linear-gradient(90deg,var(--purple),var(--red))"></div>
+          <span class="stat-icon">👥</span>
+          <div class="stat-val">${s.users||0}</div>
+          <div class="stat-lbl">Клиентов</div>
+        </div>
+        <div class="stat-card">
+          <div class="accent-line" style="background:linear-gradient(90deg,var(--red),var(--green))"></div>
+          <span class="stat-icon">🛒</span>
+          <div class="stat-val">${s.orders||0}</div>
+          <div class="stat-lbl">Заказов</div>
+        </div>
+      </div>
+
+      <div class="card fill-bar-wrap">
+        <div class="fill-bar-top">
+          <span class="fill-bar-label">Профиль заполнен</span>
+          <span class="fill-bar-pct">${pct}%</span>
+        </div>
+        <div class="fill-bar"><div class="fill-bar-inner" style="width:${pct}%"></div></div>
+        <p style="font-size:11px;color:var(--muted);margin-top:8px">
+          ${pct===100 ? '✅ Профиль заполнен — AI отвечает максимально точно!' : `Заполнено ${filled} из ${fields.length} — перейдите в "Редактировать"`}
+        </p>
+      </div>
+    `;
+
+  } else if (name === 'edit') {
+    const FIELDS = [
+      {key:'info_menu', label:'🍽 Меню и цены', placeholder:'Пицца Маргарита — 45 000 сум\nБургер — 35 000 сум\nКофе латте — 18 000 сум'},
+      {key:'info_hours', label:'🕐 Часы работы', placeholder:'Пн–Пт: 09:00 – 22:00\nСб–Вс: 10:00 – 23:00'},
+      {key:'info_location', label:'📍 Адрес', placeholder:'ул. Амира Темура 15, Ташкент\nОриентир: рядом с ТЦ Mega'},
+      {key:'info_contacts', label:'📞 Контакты', placeholder:'Telegram: @your_cafe\nТелефон: +998 90 123 45 67'},
+      {key:'info_promo', label:'🎁 Акции', placeholder:'Счастливые часы: 14:00–17:00 скидка 20%\nКаждый 5-й кофе бесплатно'},
+      {key:'info_faq', label:'❓ Частые вопросы', placeholder:'Есть ли доставка? — Да, от 50 000 сум\nМожно бронировать? — Да, пишите нам'},
+    ];
+    content.innerHTML = `
+      <div class="section-title">Данные вашего бота</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">AI использует эти данные для ответов клиентам</p>
+      ${FIELDS.map(f => `
+        <div class="field-group">
+          <span class="field-label">${f.label}</span>
+          <textarea id="field-${f.key}" placeholder="${f.placeholder}">${d[f.key]||''}</textarea>
+        </div>`).join('')}
+      <button class="btn btn-primary" onclick="saveFields()">💾 Сохранить всё</button>
+    `;
+
+  } else if (name === 'bot') {
+    content.innerHTML = `
+      <div class="card"><div class="biz-header">
+        <div class="biz-avatar">🤖</div>
+        <div class="biz-name">Ваш бот</div>
+        <div class="biz-meta">${d.name||'Бизнес'}</div>
+        <div class="status-dot ${d.bot_link?'status-active':'status-pending'}">
+          ${d.bot_link ? '● Активен' : '⏳ Готовится'}
+        </div>
+      </div></div>
+
+      ${d.bot_link ? `
+        <div class="card card-p">
+          <div class="section-title">Ссылка для клиентов</div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Отправьте эту ссылку вашим клиентам</p>
+          <div class="link-box" onclick="copyText('${d.bot_link}')">${d.bot_link}</div>
+          <button class="btn btn-primary" onclick="copyText('${d.bot_link}')">📋 Скопировать</button>
+          <button class="btn btn-ghost" onclick="shareBot('${d.bot_link}')">📤 Поделиться</button>
+        </div>
+      ` : `
+        <div class="card card-p">
+          <div class="section-title">⏳ Бот в разработке</div>
+          <p style="font-size:13px;line-height:1.6;color:var(--muted)">
+            Мы готовим вашего бота! Как только будет готов — вы получите ссылку в Telegram.<br><br>
+            <strong style="color:var(--text)">Пока ждёте — заполните данные</strong> во вкладке "Редактировать". Чем больше данных, тем умнее бот 🚀
+          </p>
+          <button class="btn btn-ghost" style="margin-top:14px" onclick="clientTab('edit')">✏️ Заполнить данные</button>
+        </div>
+      `}
+
+      <div class="card card-p">
+        <div class="section-title">Тариф</div>
+        <div class="info-row"><span class="info-key">Текущий</span><span class="info-val">${({free:'🆓 Free (30 дней)',basic:'⚡ Basic $19/мес',pro:'🚀 Pro $39/мес'})[d.plan]||'🆓 Free'}</span></div>
+        <div class="info-row"><span class="info-key">Статус</span><span class="info-val" style="color:var(--green)">Активен</span></div>
+      </div>
+    `;
+  }
+}
+
+// ── SAVE FIELDS ───────────────────────────────────────────────────────────────
+async function saveFields() {
+  const fields = ['info_menu','info_hours','info_location','info_contacts','info_promo','info_faq'];
+  const updates = {};
+  fields.forEach(f => {
+    const el = document.getElementById(`field-${f}`);
+    if (el) updates[f] = el.value.trim();
+  });
+
+  try {
+    await fetch(`${API}/api/miniapp`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ uid, updates })
+    });
+    // Update local data
+    Object.assign(userData, updates);
+    toast('✅ Сохранено!');
+  } catch(e) {
+    toast('❌ Ошибка сохранения');
+  }
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function getCatEmoji(cat) {
+  const c = cat.toLowerCase();
+  if (c.includes('кафе')||c.includes('cafe')||c.includes('ресторан')) return '☕';
+  if (c.includes('салон')||c.includes('salon')) return '💇';
+  if (c.includes('магазин')||c.includes('shop')) return '🛍';
+  if (c.includes('фитнес')||c.includes('fitness')) return '🏋️';
+  if (c.includes('медицин')||c.includes('medical')) return '🏥';
+  return '🏢';
+}
+
+function copyText(text) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => toast('✅ Скопировано!'));
+  } else toast('🔗 ' + text);
+}
+
+function shareBot(link) {
+  if (tg) tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=Напишите нам!`);
+}
+
+function toast(msg, ms=2200) {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), ms);
-}
-
-function copyLink() {
-  const link = 'https://t.me/Zevo_bbot';
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(link).then(() => toast('✅ Ссылка скопирована!'));
-  } else {
-    toast('🔗 ' + link);
-  }
-}
-
-function save(fieldId, back, msg) {
-  const val = document.getElementById(fieldId).value.trim();
-  if (!val) { toast('⚠️ Заполните поле'); return; }
-  if (tg) tg.sendData(JSON.stringify({ action: fieldId, value: val }));
-  toast('✅ ' + msg);
-  setTimeout(() => go(back), 1000);
-}
-
-function submitEdit() {
-  const val = document.getElementById('edit-txt').value.trim();
-  if (!val) { toast('⚠️ Опишите что нужно изменить'); return; }
-  if (tg) tg.sendData(JSON.stringify({ action: 'edit_request', value: val }));
-  document.getElementById('edit-txt').value = '';
-  toast('✅ Заявка отправлена!', 2000);
-  setTimeout(() => go('s-home'), 1500);
 }
 
 init();
