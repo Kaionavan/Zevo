@@ -206,7 +206,7 @@ def kb_dashboard(uid):
     rows = [
         [{"text":t("stats_btn",uid),"callback_data":"stats"},{"text":t("settings_btn",uid),"callback_data":"settings"}],
         [{"text":t("edit_btn",uid),"callback_data":"edit_req"},{"text":t("plan_btn",uid),"callback_data":"plan"}],
-        [{"text":"🔗 Ссылка для клиентов","callback_data":"my_link"}],
+        [{"text":"🤖 Мой бот","callback_data":"my_bot_status"}],
         [{"text":t("lang_btn",uid),"callback_data":"choose_lang"}],
     ]
     if MINI_APP_URL:
@@ -575,19 +575,32 @@ def on_callback(uid, chat_id, msg_id, data, cq_id, username, name):
              ] if current else [[{"text": t("back_btn",uid), "callback_data": "ob_menu"}]]})
 
 
-    elif data == "my_link":
+    elif data == "my_bot_status":
         if not user.get("registered"): return
-        biz_link = f"https://t.me/Zevo_bbot?start=biz_{uid}"
         lang = user.get("lang","ru")
-        labels = {
-            "ru": ("🔗 *Ссылка вашего бота*", "Отправьте эту ссылку вашим клиентам — они попадут прямо в вашего бота:", "Скопируйте и поделитесь с клиентами!"),
-            "en": ("🔗 *Your bot link*", "Send this link to your clients — they'll go straight to your bot:", "Copy and share with clients!"),
-            "uz": ("🔗 *Bot havolangiz*", "Bu havolani mijozlaringizga yuboring:", "Nusxa oling va ulashing!"),
-        }
-        lb = labels.get(lang, labels["ru"])
-        edit(chat_id, msg_id,
-             f"{lb[0]}\n\n{lb[1]}\n\n`{biz_link}`\n\n_{lb[2]}_",
-             kb_back(uid,"dashboard"))
+        bot_link = user.get("bot_link")
+        if bot_link:
+            # Бот готов — показываем ссылку
+            labels = {
+                "ru": f"🤖 *Ваш бот готов!*\n\nСсылка для ваших клиентов:\n`{bot_link}`\n\nОтправьте эту ссылку клиентам — они смогут писать боту 24/7",
+                "en": f"🤖 *Your bot is ready!*\n\nClient link:\n`{bot_link}`\n\nShare this with your clients",
+                "uz": f"🤖 *Botingiz tayyor!*\n\nMijozlar uchun havola:\n`{bot_link}`\n\nBu havolani mijozlaringizga yuboring",
+                "kz": f"🤖 *Ботыңыз дайын!*\n\nКлиенттер үшін сілтеме:\n`{bot_link}`",
+                "zh": f"🤖 *您的机器人已准备好！*\n\n客户链接:\n`{bot_link}`",
+                "ko": f"🤖 *봇 준비 완료!*\n\n고객 링크:\n`{bot_link}`",
+            }
+            edit(chat_id, msg_id, labels.get(lang, labels["ru"]), kb_back(uid,"dashboard"))
+        else:
+            # Бот ещё не готов
+            labels = {
+                "ru": "🤖 *Ваш бот*\n\n⏳ Мы готовим вашего бота!\n\nКак только будет готов — вы получите ссылку прямо сюда.\n\n_Обычно это занимает до 24 часов_ 🚀",
+                "en": "🤖 *Your bot*\n\n⏳ We're setting up your bot!\n\nOnce ready, you'll receive the link here.\n\n_Usually within 24 hours_ 🚀",
+                "uz": "🤖 *Botingiz*\n\n⏳ Botingizni tayyorlamoqdamiz!\n\nTayyor bo'lgach, havola shu yerga yuboriladi.\n\n_Odatda 24 soat ichida_ 🚀",
+                "kz": "🤖 *Ботыңыз*\n\n⏳ Ботыңызды дайындаудамыз!\n\nДайын болғанда сілтеме осында жіберіледі.\n\n_Әдетте 24 сағат ішінде_ 🚀",
+                "zh": "🤖 *您的机器人*\n\n⏳ 我们正在为您设置机器人！\n\n准备好后，链接将发送到这里。\n\n_通常在24小时内_ 🚀",
+                "ko": "🤖 *봇 상태*\n\n⏳ 봇을 준비 중입니다!\n\n준비되면 링크가 여기로 전송됩니다.\n\n_보통 24시간 이내_ 🚀",
+            }
+            edit(chat_id, msg_id, labels.get(lang, labels["ru"]), kb_back(uid,"dashboard"))
 
     elif data == "ob_menu":
         user = get_user(uid)
@@ -706,6 +719,30 @@ def on_message(uid, chat_id, text, username, message_id, msg_type, name, tg_lang
     st = get_state(uid)
     step = st.get("step")
 
+
+    # Админ отправляет ссылку клиенту
+    if step and step.startswith("send_link_") and uid == ADMIN_ID:
+        target_uid = int(step.split("_")[2])
+        bot_link = text.strip()
+        # Сохраняем ссылку клиенту
+        target = get_user(target_uid)
+        target["bot_link"] = bot_link
+        set_user(target_uid, target)
+        del_state(uid)
+        # Уведомляем клиента
+        target_lang = target.get("lang","ru")
+        msgs = {
+            "ru": f"🎉 *Ваш бот готов!*\n\nВот ваша ссылка — поделитесь с клиентами:\n`{bot_link}`\n\nОткройте панель управления чтобы следить за статистикой 📊",
+            "en": f"🎉 *Your bot is ready!*\n\nHere's your link — share with clients:\n`{bot_link}`",
+            "uz": f"🎉 *Botingiz tayyor!*\n\nHavola — mijozlarga ulashing:\n`{bot_link}`\n\nStatistikani kuzatish uchun boshqaruv panelini oching 📊",
+            "kz": f"🎉 *Ботыңыз дайын!*\n\nСілтеме — клиенттерге жіберіңіз:\n`{bot_link}`",
+            "zh": f"🎉 *您的机器人已准备好！*\n\n链接 — 与客户分享:\n`{bot_link}`",
+            "ko": f"🎉 *봇 준비 완료!*\n\n링크 — 고객과 공유하세요:\n`{bot_link}`",
+        }
+        send(target_uid, msgs.get(target_lang, msgs["ru"]), kb_dashboard(target_uid))
+        send(chat_id, f"✅ Ссылка отправлена клиенту {target.get('name','?')}!")
+        return
+
     # Если пользователь — клиент бизнеса
     if user.get("client_of") and not step:
         biz_id = user["client_of"]
@@ -798,11 +835,48 @@ def on_message(uid, chat_id, text, username, message_id, msg_type, name, tg_lang
              f"🌍 {LANGS.get(user.get('lang','ru'),'?')}\n\n"
              f"🔗 Ссылка клиента:\n`https://t.me/Zevo_bbot?start=biz_{uid}`",
              {"inline_keyboard": [
-                 [{"text":"🔗 Отправить ссылку клиенту","callback_data":f"client_link_{uid}"}],
+                 [{"text":"🔗 Отправить ссылку бота","callback_data":f"send_bot_link_{uid}"}],
                  [{"text":"⛔ Заблокировать","callback_data":f"block_{uid}"}],
              ]})
+        # Сначала поздравление
         send(chat_id, t("registered",uid,name=n))
         import time; time.sleep(0.5)
+        # Потом сразу ТЗ
+        lang = user.get("lang","ru")
+        tz_intro = {
+            "ru": (
+                "📋 *Заполните ТЗ для вашего бота*\n\n"
+                "Чем подробнее заполните — тем лучше бот отвечает вашим клиентам.\n\n"
+                "Рекомендуем заполнить все разделы 👇"
+            ),
+            "en": (
+                "📋 *Fill in your bot's info*\n\n"
+                "The more details you add — the better your bot answers clients.\n\n"
+                "We recommend filling all sections 👇"
+            ),
+            "uz": (
+                "📋 *Bot uchun ma\'lumot to\'ldiring*\n\n"
+                "Qancha ko\'p ma\'lumot — shuncha aqlli javob beradi.\n\n"
+                "Barcha bo\'limlarni to\'ldirishni tavsiya qilamiz 👇"
+            ),
+            "kz": (
+                "📋 *Бот үшін ТЗ толтырыңыз*\n\n"
+                "Неғұрлым толық болса — бот соғұрлым жақсы жауап береді.\n\n"
+                "Барлық бөлімдерді толтыруды ұсынамыз 👇"
+            ),
+            "zh": (
+                "📋 *填写机器人信息*\n\n"
+                "信息越详细 — 机器人回答越准确。\n\n"
+                "建议填写所有部分 👇"
+            ),
+            "ko": (
+                "📋 *봇 정보 작성*\n\n"
+                "자세할수록 봇이 더 정확하게 답변합니다.\n\n"
+                "모든 섹션을 작성하는 것을 권장합니다 👇"
+            ),
+        }
+        send(chat_id, tz_intro.get(lang, tz_intro["ru"]))
+        time.sleep(0.3)
         send(chat_id, onboarding_text(uid, user), onboarding_kb(uid))
 
 
