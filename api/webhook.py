@@ -206,6 +206,7 @@ def kb_dashboard(uid):
     rows = [
         [{"text":t("stats_btn",uid),"callback_data":"stats"},{"text":t("settings_btn",uid),"callback_data":"settings"}],
         [{"text":t("edit_btn",uid),"callback_data":"edit_req"},{"text":t("plan_btn",uid),"callback_data":"plan"}],
+        [{"text":"🔗 Ссылка для клиентов","callback_data":"my_link"}],
         [{"text":t("lang_btn",uid),"callback_data":"choose_lang"}],
     ]
     if MINI_APP_URL:
@@ -217,10 +218,12 @@ def kb_settings(uid):
     d={"ru":"📝 Описание","en":"📝 Description","uz":"📝 Tavsif","kz":"📝 Сипаттама","zh":"📝 描述","ko":"📝 설명"}
     h={"ru":"🕐 Часы работы","en":"🕐 Hours","uz":"🕐 Ish vaqti","kz":"🕐 Жұмыс уақыты","zh":"🕐 营业时间","ko":"🕐 영업시간"}
     m={"ru":"📋 Меню/Услуги","en":"📋 Menu/Services","uz":"📋 Menyu","kz":"📋 Мәзір","zh":"📋 菜单","ko":"📋 메뉴"}
+    av={"ru":"🖼 Аватарка бота","en":"🖼 Bot avatar","uz":"🖼 Bot avatari","kz":"🖼 Бот аватары","zh":"🖼 机器人头像","ko":"🖼 봇 아바타"}
     return {"inline_keyboard":[
         [{"text":d.get(lang,"📝"),"callback_data":"set_desc"}],
         [{"text":h.get(lang,"🕐"),"callback_data":"set_hours"}],
         [{"text":m.get(lang,"📋"),"callback_data":"set_menu"}],
+        [{"text":av.get(lang,"🖼"),"callback_data":"set_avatar"}],
         [{"text":t("back_btn",uid),"callback_data":"dashboard"}],
     ]}
 
@@ -256,20 +259,225 @@ def text_dashboard(uid):
         f"{lb[4]}: {s['total']} {lb[1].lower()}"
     )
 
+
+# ── Onboarding ────────────────────────────────────────────────────────────────
+
+ONBOARDING_STEPS = [
+    ("menu",     {"ru":"🍽 Меню и цены",      "en":"🍽 Menu & prices",    "uz":"🍽 Menyu va narxlar",  "kz":"🍽 Мәзір мен бағалар", "zh":"🍽 菜单和价格",    "ko":"🍽 메뉴 및 가격"}),
+    ("hours",    {"ru":"🕐 Часы работы",       "en":"🕐 Working hours",    "uz":"🕐 Ish vaqti",         "kz":"🕐 Жұмыс уақыты",      "zh":"🕐 营业时间",      "ko":"🕐 영업시간"}),
+    ("location", {"ru":"📍 Адрес и локация",   "en":"📍 Address",          "uz":"📍 Manzil",            "kz":"📍 Мекенжай",          "zh":"📍 地址位置",      "ko":"📍 주소 위치"}),
+    ("contacts", {"ru":"📞 Контакты",          "en":"📞 Contacts",         "uz":"📞 Kontaktlar",        "kz":"📞 Байланыс",          "zh":"📞 联系方式",      "ko":"📞 연락처"}),
+    ("promo",    {"ru":"🎁 Акции и бонусы",    "en":"🎁 Promotions",       "uz":"🎁 Aksiyalar",         "kz":"🎁 Акциялар",          "zh":"🎁 促销优惠",      "ko":"🎁 프로모션"}),
+    ("faq",      {"ru":"❓ Частые вопросы",    "en":"❓ FAQ",              "uz":"❓ Ko'p so'raladigan", "kz":"❓ Жиі сұрақтар",      "zh":"❓ 常见问题",      "ko":"❓ 자주 묻는 질문"}),
+]
+
+ONBOARDING_HINTS = {
+    "menu":     {"ru":"Напишите ваше меню с ценами.\n\nНапример:\n🍕 Пицца Маргарита — 45 000 сум\n🍔 Бургер классик — 35 000 сум\n☕ Кофе латте — 18 000 сум\n🥗 Салат Цезарь — 28 000 сум",
+                 "en":"Write your menu with prices.\n\nExample:\n🍕 Pizza — $8\n🍔 Burger — $6\n☕ Latte — $3",
+                 "uz":"Menyu va narxlarni yozing.\n\nMasalan:\n🍕 Pizza — 45 000 so'm\n🍔 Burger — 35 000 so'm\n☕ Kofe — 18 000 so'm",
+                 "kz":"Мәзір мен бағаларды жазыңыз.\n\nМысалы:\n🍕 Пицца — 45 000 сум\n🍔 Бургер — 35 000 сум",
+                 "zh":"请写下您的菜单和价格。\n\n例如：\n🍕 披萨 — ¥45\n🍔 汉堡 — ¥35\n☕ 拿铁 — ¥18",
+                 "ko":"메뉴와 가격을 작성하세요.\n\n예시:\n🍕 피자 — 45,000원\n🍔 버거 — 35,000원"},
+    "hours":    {"ru":"Напишите часы работы.\n\nНапример:\n📅 Пн–Пт: 09:00 – 22:00\n📅 Сб–Вс: 10:00 – 23:00\n🚫 Понедельник — выходной",
+                 "en":"Write your working hours.\n\nExample:\n📅 Mon–Fri: 9am – 10pm\n📅 Sat–Sun: 10am – 11pm",
+                 "uz":"Ish vaqtini yozing.\n\nMasalan:\n📅 Du–Ju: 09:00 – 22:00\n📅 Shan–Yak: 10:00 – 23:00",
+                 "kz":"Жұмыс уақытын жазыңыз.\n\nМысалы:\n📅 Дс–Жм: 09:00 – 22:00",
+                 "zh":"请写下营业时间。\n\n例如：\n📅 周一至周五：9:00 – 22:00\n📅 周末：10:00 – 23:00",
+                 "ko":"영업시간을 작성하세요.\n\n예시:\n📅 월–금: 09:00 – 22:00\n📅 토–일: 10:00 – 23:00"},
+    "location": {"ru":"Напишите адрес и как добраться.\n\nНапример:\nул. Амира Темура 15, Ташкент\nОриентир: рядом с ТЦ Mega Planet\nПарковка: бесплатная\nМетро: Bunyodkor (5 мин пешком)",
+                 "en":"Write your address and how to get there.\n\nExample:\n15 Amir Temur St, Tashkent\nNearby: Mega Planet Mall\nParking: free",
+                 "uz":"Manzil va qanday borish haqida yozing.\n\nMasalan:\nAmir Temur ko'chasi 15, Toshkent\nMo'ljal: Mega Planet yonida",
+                 "kz":"Мекенжай мен қалай жетуді жазыңыз.",
+                 "zh":"请写下地址和交通方式。\n\n例如：\n帖木儿大街15号，塔什干\n地标：Mega Plaza附近",
+                 "ko":"주소와 찾아오는 방법을 작성하세요."},
+    "contacts": {"ru":"Напишите контакты для связи.\n\nНапример:\n📱 Telegram: @your_cafe\n📞 Телефон: +998 90 123 45 67\n📸 Instagram: @your_cafe\n🌐 Сайт: yourcafe.uz",
+                 "en":"Write your contact information.\n\nExample:\n📱 Telegram: @your_cafe\n📞 Phone: +1 234 567 8900\n📸 Instagram: @your_cafe",
+                 "uz":"Kontakt ma'lumotlarini yozing.\n\nMasalan:\n📱 Telegram: @your_cafe\n📞 Telefon: +998 90 123 45 67",
+                 "kz":"Байланыс ақпаратын жазыңыз.",
+                 "zh":"请写下联系方式。\n\n例如：\n📱 微信：your_cafe\n📞 电话：+86 123 4567",
+                 "ko":"연락처 정보를 작성하세요."},
+    "promo":    {"ru":"Напишите ваши акции и специальные предложения.\n\nНапример:\n🎁 Счастливые часы: 14:00–17:00 скидка 20%\n☕ Каждый 5-й кофе в подарок\n👥 Для компании от 5 человек — десерт бесплатно\n🎂 В день рождения — скидка 15%",
+                 "en":"Write your promotions and special offers.\n\nExample:\n🎁 Happy hours: 2pm–5pm 20% off\n☕ Every 5th coffee free\n🎂 Birthday discount: 15% off",
+                 "uz":"Aksiya va maxsus takliflarni yozing.\n\nMasalan:\n🎁 Baxtli soatlar: 14:00–17:00 da 20% chegirma",
+                 "kz":"Акциялар мен арнайы ұсыныстарды жазыңыз.",
+                 "zh":"请写下您的促销和特别优惠。\n\n例如：\n🎁 欢乐时光：14:00–17:00 打八折",
+                 "ko":"프로모션과 특별 혜택을 작성하세요."},
+    "faq":      {"ru":"Напишите частые вопросы клиентов и ответы.\n\nНапример:\n❓ Есть ли доставка? — Да, от 50 000 сум бесплатно\n❓ Можно бронировать столик? — Да, пишите нам\n❓ Есть ли детское меню? — Да\n❓ Принимаете карты? — Visa, Humo, UzCard",
+                 "en":"Write frequently asked questions and answers.\n\nExample:\n❓ Do you deliver? — Yes, free over $20\n❓ Can I book a table? — Yes, message us\n❓ Do you accept cards? — Yes",
+                 "uz":"Ko'p so'raladigan savollar va javoblar.\n\nMasalan:\n❓ Yetkazib berish bormi? — Ha, 50 000 so'mdan bepul",
+                 "kz":"Жиі қойылатын сұрақтар мен жауаптар.",
+                 "zh":"请写下常见问题和答案。\n\n例如：\n❓ 有外卖吗？— 有，50元以上免费配送",
+                 "ko":"자주 묻는 질문과 답변을 작성하세요."},
+}
+
+def onboarding_progress(user):
+    filled = sum(1 for step, _ in ONBOARDING_STEPS if user.get(f"info_{step}"))
+    total = len(ONBOARDING_STEPS)
+    bar = "●" * filled + "○" * (total - filled)
+    pct = int(filled / total * 100)
+    return filled, total, bar, pct
+
+def onboarding_text(uid, user):
+    lang = user.get("lang","ru")
+    filled, total, bar, pct = onboarding_progress(user)
+    labels = {
+        "ru": ("🚀 Настройка AI-бота", "Заполните информацию — чем больше, тем умнее бот отвечает клиентам", "Готово", "Заполнено"),
+        "en": ("🚀 AI Bot Setup", "Fill in the info — the more you add, the smarter your bot answers", "Done", "Filled"),
+        "uz": ("🚀 AI-bot sozlash", "Ma'lumot to'ldiring — ko'proq bo'lsa, bot aqlliroq javob beradi", "Tayyor", "To'ldirildi"),
+        "kz": ("🚀 AI-ботты баптау", "Ақпарат толтырыңыз — көбірек болса, бот ақылды жауап береді", "Дайын", "Толтырылды"),
+        "zh": ("🚀 AI机器人设置", "填写信息 — 信息越多，机器人回答越智能", "完成", "已填写"),
+        "ko": ("🚀 AI 봇 설정", "정보를 채울수록 봇이 더 스마트하게 답변합니다", "완료", "작성됨"),
+    }.get(lang, ("🚀 AI Bot Setup", "Fill info for smarter bot", "Done", "Filled"))
+    
+    steps_text = ""
+    for step, names in ONBOARDING_STEPS:
+        name = names.get(lang, names["ru"])
+        done = "✅" if user.get(f"info_{step}") else "○"
+        steps_text += f"{done} {name}\n"
+    
+    return (
+        f"*{labels[0]}*\n\n"
+        f"{labels[1]}\n\n"
+        f"{steps_text}\n"
+        f"`{bar}` {pct}% {labels[3]}"
+    )
+
+def onboarding_kb(uid):
+    user = get_user(uid)
+    lang = user.get("lang","ru")
+    rows = []
+    for step, names in ONBOARDING_STEPS:
+        name = names.get(lang, names["ru"])
+        done = "✅ " if user.get(f"info_{step}") else ""
+        rows.append([{"text": f"{done}{name}", "callback_data": f"ob_{step}"}])
+    rows.append([{"text": t("open_btn",uid) if MINI_APP_URL else "📊 Дашборд", "callback_data": "dashboard"}])
+    return {"inline_keyboard": rows}
+
+
+def kb_admin_dashboard(uid):
+    """Специальный дашборд для администратора Zevo"""
+    rows = [
+        [{"text":"📊 Статистика","callback_data":"stats"},{"text":"⚙️ Настройки","callback_data":"settings"}],
+        [{"text":"👥 Все клиенты","callback_data":"admin_clients"},{"text":"💰 Тариф","callback_data":"plan"}],
+        [{"text":"🔗 Моя ссылка","callback_data":"my_link"}],
+        [{"text":"🌍 Язык","callback_data":"choose_lang"}],
+    ]
+    if MINI_APP_URL:
+        rows.insert(2,[{"text":"📱 Открыть панель","web_app":{"url":MINI_APP_URL}}])
+    return {"inline_keyboard": rows}
+
 # ── Handlers ──────────────────────────────────────────────────────────────────
 
-def on_start(uid, name, chat_id, tg_lang):
+def on_start(uid, name, chat_id, tg_lang, payload=""):
     user = get_user(uid)
+    if user.get("blocked"):
+        send(chat_id, "⛔ Ваш доступ приостановлен. Обратитесь в поддержку: @Nurali0369")
+        return
     if not user.get("lang"):
-        # Автоопределение языка
         auto = tg_lang[:2] if tg_lang else "ru"
         if auto not in LANGS: auto = "ru"
         user["lang"] = auto
         set_user(uid, user)
+
+    # Если это клиент бизнеса (payload = business_id)
+    if payload and payload.startswith("biz_"):
+        biz_id = payload[4:]
+        biz = get_user(int(biz_id)) if biz_id.isdigit() else None
+        if biz and biz.get("registered"):
+            handle_client(uid, name, chat_id, biz_id, biz, user)
+            return
+
+    # Обычный владелец бизнеса
     if user.get("registered"):
-        send(chat_id, text_dashboard(uid), kb_dashboard(uid))
+        if uid == ADMIN_ID:
+            send(chat_id, text_dashboard(uid), kb_admin_dashboard(uid))
+        else:
+            send(chat_id, text_dashboard(uid), kb_dashboard(uid))
     else:
         send(chat_id, t("welcome", uid, name=name), kb_start(uid))
+
+def handle_client(uid, name, chat_id, biz_id, biz, client_user):
+    """Клиент кафе/бизнеса пишет боту"""
+    lang = client_user.get("lang", "ru")
+    biz_name = biz.get("name", "Бизнес")
+    desc = biz.get("description", "")
+    menu = biz.get("info_menu", "")
+    hours = biz.get("info_hours", "")
+    location = biz.get("info_location", "")
+    contacts = biz.get("info_contacts", "")
+    promo = biz.get("info_promo", "")
+
+    # Сохраняем что клиент принадлежит этому бизнесу
+    client_user["client_of"] = biz_id
+    client_user["lang"] = lang
+    set_user(uid, client_user)
+
+    # Обновляем статистику бизнеса
+    biz_data = get_user(int(biz_id))
+    s = biz_data.get("stats", {"today":0,"total":0,"users":0,"orders":0})
+    
+    # Проверяем новый ли пользователь
+    known = kv_get(f"client:{biz_id}:{uid}")
+    if not known:
+        kv_set(f"client:{biz_id}:{uid}", 1, ex=86400*365)
+        s["users"] = s.get("users", 0) + 1
+    s["today"] = s.get("today", 0) + 1
+    s["total"] = s.get("total", 0) + 1
+    biz_data["stats"] = s
+    set_user(int(biz_id), biz_data)
+
+    greetings = {
+        "ru": f"👋 Добро пожаловать в *{biz_name}*!",
+        "en": f"👋 Welcome to *{biz_name}*!",
+        "uz": f"👋 *{biz_name}*ga xush kelibsiz!",
+        "kz": f"👋 *{biz_name}*-ға қош келдіңіз!",
+        "zh": f"👋 欢迎来到 *{biz_name}*！",
+        "ko": f"👋 *{biz_name}*에 오신 것을 환영합니다!",
+    }
+    
+    info_parts = []
+    if desc: info_parts.append(f"📋 {desc}")
+    if hours: info_parts.append(f"🕐 {hours}")
+    if location: info_parts.append(f"📍 {location}")
+    if contacts: info_parts.append(f"📞 {contacts}")
+    if promo: info_parts.append(f"🎁 {promo}")
+    if menu: info_parts.append(f"🍽 *Меню:*\n{menu}")
+
+    greeting = greetings.get(lang, greetings["ru"])
+    info_text = "\n\n".join(info_parts) if info_parts else ""
+    
+    ask_labels = {
+        "ru": "Чем могу помочь? Задайте вопрос 👇",
+        "en": "How can I help? Ask a question 👇",
+        "uz": "Qanday yordam bera olaman? Savol bering 👇",
+        "kz": "Қалай көмектесе аламын? Сұрақ қойыңыз 👇",
+        "zh": "我能帮助您什么？请提问 👇",
+        "ko": "어떻게 도와드릴까요? 질문하세요 👇",
+    }
+    
+    full_text = greeting
+    if info_text:
+        full_text += f"\n\n{info_text}"
+    full_text += f"\n\n{ask_labels.get(lang, ask_labels['ru'])}"
+    
+    # Кнопки для клиента
+    btn_labels = {
+        "ru": ["🍽 Меню", "🕐 Часы", "📍 Адрес", "📞 Контакты", "🎁 Акции"],
+        "en": ["🍽 Menu", "🕐 Hours", "📍 Location", "📞 Contacts", "🎁 Promos"],
+        "uz": ["🍽 Menyu", "🕐 Vaqt", "📍 Manzil", "📞 Kontakt", "🎁 Aksiya"],
+        "kz": ["🍽 Мәзір", "🕐 Уақыт", "📍 Мекен", "📞 Байланыс", "🎁 Акция"],
+        "zh": ["🍽 菜单", "🕐 时间", "📍 地址", "📞 联系", "🎁 优惠"],
+        "ko": ["🍽 메뉴", "🕐 시간", "📍 위치", "📞 연락처", "🎁 혜택"],
+    }
+    btns = btn_labels.get(lang, btn_labels["ru"])
+    kb = {"inline_keyboard": [
+        [{"text": btns[0], "callback_data": f"c_menu_{biz_id}"},
+         {"text": btns[1], "callback_data": f"c_hours_{biz_id}"}],
+        [{"text": btns[2], "callback_data": f"c_loc_{biz_id}"},
+         {"text": btns[3], "callback_data": f"c_cont_{biz_id}"}],
+        [{"text": btns[4], "callback_data": f"c_promo_{biz_id}"}],
+    ]}
+    send(chat_id, full_text, kb)
 
 def on_callback(uid, chat_id, msg_id, data, cq_id, username, name):
     answer(cq_id)
@@ -347,6 +555,64 @@ def on_callback(uid, chat_id, msg_id, data, cq_id, username, name):
         set_state(uid, {"step": step})
         edit(chat_id, msg_id, t("settings_text",uid), kb_back(uid,"settings"))
 
+
+    elif data.startswith("ob_"):
+        step = data[3:]
+        hint = ONBOARDING_HINTS.get(step, {})
+        lang = user.get("lang","ru")
+        hint_text = hint.get(lang, hint.get("ru",""))
+        step_names = dict(ONBOARDING_STEPS)
+        step_name = step_names.get(step, {}).get(lang, step) if step_names.get(step) else step
+        set_state(uid, {"step": f"ob_{step}"})
+        done = "✅ " if user.get(f"info_{step}") else ""
+        current = user.get(f"info_{step}", "")
+        current_text = f"\n\n_Текущее значение:_\n{current[:200]}" if current else ""
+        edit(chat_id, msg_id,
+             f"*{done}{step_name}*{current_text}\n\n{hint_text}",
+             {"inline_keyboard": [
+                 [{"text": "🗑 Очистить", "callback_data": f"ob_clear_{step}"}] if current else [],
+                 [{"text": t("back_btn",uid), "callback_data": "ob_menu"}],
+             ] if current else [[{"text": t("back_btn",uid), "callback_data": "ob_menu"}]]})
+
+
+    elif data == "my_link":
+        if not user.get("registered"): return
+        biz_link = f"https://t.me/Zevo_bbot?start=biz_{uid}"
+        lang = user.get("lang","ru")
+        labels = {
+            "ru": ("🔗 *Ссылка вашего бота*", "Отправьте эту ссылку вашим клиентам — они попадут прямо в вашего бота:", "Скопируйте и поделитесь с клиентами!"),
+            "en": ("🔗 *Your bot link*", "Send this link to your clients — they'll go straight to your bot:", "Copy and share with clients!"),
+            "uz": ("🔗 *Bot havolangiz*", "Bu havolani mijozlaringizga yuboring:", "Nusxa oling va ulashing!"),
+        }
+        lb = labels.get(lang, labels["ru"])
+        edit(chat_id, msg_id,
+             f"{lb[0]}\n\n{lb[1]}\n\n`{biz_link}`\n\n_{lb[2]}_",
+             kb_back(uid,"dashboard"))
+
+    elif data == "ob_menu":
+        user = get_user(uid)
+        edit(chat_id, msg_id, onboarding_text(uid, user), onboarding_kb(uid))
+
+    elif data.startswith("ob_clear_"):
+        step = data[9:]
+        user.pop(f"info_{step}", None)
+        set_user(uid, user)
+        edit(chat_id, msg_id, onboarding_text(uid, user), onboarding_kb(uid))
+
+
+    elif data == "set_avatar":
+        set_state(uid, {"step":"upload_avatar"})
+        lang = user.get("lang","ru")
+        labels = {
+            "ru": "🖼 *Аватарка бота*\n\nОтправьте фото логотипа вашего бизнеса.\nЭто фото будет отображаться в профиле бота.",
+            "en": "🖼 *Bot avatar*\n\nSend a photo of your business logo.",
+            "uz": "🖼 *Bot avatari*\n\nBiznes logotipingiz rasmini yuboring.",
+            "kz": "🖼 *Бот аватары*\n\nБизнес логотипіңіздің суретін жіберіңіз.",
+            "zh": "🖼 *机器人头像*\n\n请发送您的业务标志照片。",
+            "ko": "🖼 *봇 아바타*\n\n비즈니스 로고 사진을 보내주세요.",
+        }
+        edit(chat_id, msg_id, labels.get(lang, labels["ru"]), kb_back(uid,"settings"))
+
     elif data == "edit_req":
         set_state(uid, {"step":"edit_req"})
         edit(chat_id, msg_id, t("edit_req_text",uid), kb_back(uid,"dashboard"))
@@ -388,6 +654,32 @@ def on_callback(uid, chat_id, msg_id, data, cq_id, username, name):
              ]]})
         send(chat_id, t("send_check",uid))
 
+
+    # ── Клиент бизнеса ──
+    elif data.startswith("c_"):
+        parts = data.split("_", 2)
+        if len(parts) >= 3:
+            action = parts[1]
+            biz_id = parts[2]
+            biz = get_user(int(biz_id)) if biz_id.isdigit() else {}
+            lang = user.get("lang","ru")
+            
+            field_map = {
+                "menu":  ("info_menu",  {"ru":"🍽 *Меню:*","en":"🍽 *Menu:*","uz":"🍽 *Menyu:*","kz":"🍽 *Мәзір:*","zh":"🍽 *菜单:*","ko":"🍽 *메뉴:*"}),
+                "hours": ("info_hours", {"ru":"🕐 *Часы работы:*","en":"🕐 *Working hours:*","uz":"🕐 *Ish vaqti:*","kz":"🕐 *Жұмыс уақыты:*","zh":"🕐 *营业时间:*","ko":"🕐 *영업시간:*"}),
+                "loc":   ("info_location",{"ru":"📍 *Адрес:*","en":"📍 *Address:*","uz":"📍 *Manzil:*","kz":"📍 *Мекенжай:*","zh":"📍 *地址:*","ko":"📍 *주소:*"}),
+                "cont":  ("info_contacts",{"ru":"📞 *Контакты:*","en":"📞 *Contacts:*","uz":"📞 *Kontaktlar:*","kz":"📞 *Байланыс:*","zh":"📞 *联系方式:*","ko":"📞 *연락처:*"}),
+                "promo": ("info_promo",  {"ru":"🎁 *Акции:*","en":"🎁 *Promotions:*","uz":"🎁 *Aksiyalar:*","kz":"🎁 *Акциялар:*","zh":"🎁 *促销:*","ko":"🎁 *프로모션:*"}),
+            }
+            
+            if action in field_map:
+                field, title_map = field_map[action]
+                val = biz.get(field)
+                title = title_map.get(lang, title_map["ru"])
+                empty_labels = {"ru":"Информация пока не добавлена","en":"No info yet","uz":"Ma'lumot yo'q","kz":"Ақпарат жоқ","zh":"暂无信息","ko":"정보 없음"}
+                text = f"{title}\n\n{val}" if val else empty_labels.get(lang,"—")
+                edit(chat_id, msg_id, text, kb_back(uid, "start"))
+
     elif data.startswith("confirm_") and uid == ADMIN_ID:
         parts = data.split("_")
         target_uid, plan_key = int(parts[1]), parts[2]
@@ -413,6 +705,55 @@ def on_message(uid, chat_id, text, username, message_id, msg_type, name, tg_lang
 
     st = get_state(uid)
     step = st.get("step")
+
+    # Если пользователь — клиент бизнеса
+    if user.get("client_of") and not step:
+        biz_id = user["client_of"]
+        biz = get_user(int(biz_id)) if str(biz_id).isdigit() else {}
+        if biz:
+            # Обновляем статистику
+            s = biz.get("stats", {"today":0,"total":0,"users":0,"orders":0})
+            s["today"] = s.get("today", 0) + 1
+            s["total"] = s.get("total", 0) + 1
+            biz["stats"] = s
+            set_user(int(biz_id), biz)
+            
+            # Отвечаем данными бизнеса
+            lang = user.get("lang","ru")
+            info = []
+            if biz.get("info_menu"): info.append(f"Меню: {biz['info_menu']}")
+            if biz.get("info_hours"): info.append(f"Часы: {biz['info_hours']}")
+            if biz.get("info_location"): info.append(f"Адрес: {biz['info_location']}")
+            if biz.get("info_contacts"): info.append(f"Контакты: {biz['info_contacts']}")
+            
+            fallback = {
+                "ru": f"Спасибо за вопрос! Мы свяжемся с вами в ближайшее время 🙏",
+                "en": f"Thank you! We'll get back to you soon 🙏",
+                "uz": f"Savolingiz uchun rahmat! Tez orada bog'lanamiz 🙏",
+                "kz": f"Рахмет! Жақын арада хабарласамыз 🙏",
+                "zh": f"谢谢您的提问！我们会尽快回复您 🙏",
+                "ko": f"질문 감사합니다! 곧 연락드리겠습니다 🙏",
+            }
+            send(chat_id, fallback.get(lang, fallback["ru"]))
+            return
+
+
+
+
+    # Загрузка аватарки бота
+    if msg_type == "photo" and step == "upload_avatar":
+        del_state(uid)
+        # Сохраняем file_id последней фотки
+        # (file_id придёт в теле сообщения)
+        lang = user.get("lang","ru")
+        saved = {"ru":"✅ Аватарка сохранена! Теперь бот будет с вашим логотипом 🎨",
+                 "en":"✅ Avatar saved! Your bot now has your logo 🎨",
+                 "uz":"✅ Avatar saqlandi! Botingiz endi logotipingiz bilan 🎨",
+                 "kz":"✅ Аватар сақталды! Ботыңыз енді логотипіңізбен 🎨",
+                 "zh":"✅ 头像已保存！您的机器人现在有了您的标志 🎨",
+                 "ko":"✅ 아바타 저장됨! 봇에 로고가 적용되었습니다 🎨"}
+        send(chat_id, saved.get(lang, saved["ru"]), kb_dashboard(uid))
+        return
 
     if msg_type == "photo" and step == "awaiting_check":
         plan_key = st.get("plan","starter")
@@ -444,8 +785,35 @@ def on_message(uid, chat_id, text, username, message_id, msg_type, name, tg_lang
         })
         set_user(uid, user)
         del_state(uid)
-        send(ADMIN_ID, f"🆕 *Новый клиент!*\n\n👤 @{username}\n🏢 {n}\n📂 {cat}\n🌍 {LANGS.get(user.get('lang','ru'),'?')}")
-        send(chat_id, t("registered",uid,name=n), kb_dashboard(uid))
+        # Добавляем в список клиентов
+        clients = kv_get("all_clients") or []
+        if str(uid) not in clients:
+            clients.append(str(uid))
+            kv_set("all_clients", clients)
+
+        send(ADMIN_ID,
+             f"🆕 *Новый клиент Zevo!*\n\n"
+             f"👤 @{username} (ID: `{uid}`)\n"
+             f"🏢 {n}\n📂 {cat}\n"
+             f"🌍 {LANGS.get(user.get('lang','ru'),'?')}\n\n"
+             f"🔗 Ссылка клиента:\n`https://t.me/Zevo_bbot?start=biz_{uid}`",
+             {"inline_keyboard": [
+                 [{"text":"🔗 Отправить ссылку клиенту","callback_data":f"client_link_{uid}"}],
+                 [{"text":"⛔ Заблокировать","callback_data":f"block_{uid}"}],
+             ]})
+        send(chat_id, t("registered",uid,name=n))
+        import time; time.sleep(0.5)
+        send(chat_id, onboarding_text(uid, user), onboarding_kb(uid))
+
+
+    elif step and step.startswith("ob_"):
+        field = step[3:]
+        user[f"info_{field}"] = text
+        set_user(uid, user)
+        del_state(uid)
+        lang = user.get("lang","ru")
+        saved_labels = {"ru":"✅ Сохранено!","en":"✅ Saved!","uz":"✅ Saqlandi!","kz":"✅ Сақталды!","zh":"✅ 已保存！","ko":"✅ 저장됨!"}
+        send(chat_id, saved_labels.get(lang,"✅"), onboarding_kb(uid))
 
     elif step == "edit_req":
         del_state(uid)
@@ -495,7 +863,8 @@ class handler(BaseHTTPRequestHandler):
                 tg_lang  = msg["from"].get("language_code","ru")
                 msg_type = "photo" if "photo" in msg else "text"
                 if text.startswith("/start"):
-                    on_start(uid, name, cid, tg_lang)
+                    payload = text.split(" ")[1] if " " in text else ""
+                    on_start(uid, name, cid, tg_lang, payload)
                 else:
                     on_message(uid, cid, text, username, mid, msg_type, name, tg_lang)
         except Exception as e:
