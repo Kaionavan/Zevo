@@ -13,9 +13,9 @@ KV_TOKEN     = os.environ.get("KV_REST_API_TOKEN", "")
 API          = f"https://api.telegram.org/bot{TOKEN}"
 
 PLANS = {
-    "free":    {"emoji": "🆓", "name": "Free",    "price": 0,   "limit": 100},
-    "starter": {"emoji": "⚡", "name": "Starter", "price": 29,  "limit": 1000},
-    "pro":     {"emoji": "🚀", "name": "Pro",     "price": 79,  "limit": 99999},
+    "free":  {"emoji": "🆓", "name": "Free",  "price": 0,  "desc": {"ru":"30 дней бесплатно","en":"30 days free","uz":"30 kun bepul","kz":"30 күн тегін","zh":"30天免费","ko":"30일 무료"}},
+    "basic": {"emoji": "⚡", "name": "Basic", "price": 19, "desc": {"ru":"Бот 24/7 + поддержка","en":"Bot 24/7 + support","uz":"Bot 24/7 + qo'llab","kz":"Бот 24/7 + қолдау","zh":"机器人24/7+支持","ko":"봇 24/7+지원"}},
+    "pro":   {"emoji": "🚀", "name": "Pro",   "price": 39, "desc": {"ru":"AI + отчёты + приоритет","en":"AI + reports + priority","uz":"AI + hisobotlar","kz":"AI + есептер","zh":"AI+报告+优先","ko":"AI+보고서+우선"}},
 }
 
 CATEGORIES_RU = {
@@ -229,8 +229,8 @@ def kb_settings(uid):
 
 def kb_plans_upgrade(uid):
     return {"inline_keyboard":[
-        [{"text":"⚡ Starter — $29/мес","callback_data":"buy_starter"}],
-        [{"text":"🚀 Pro — $79/мес","callback_data":"buy_pro"}],
+        [{"text":"⚡ Basic — $19/мес","callback_data":"buy_basic"}],
+        [{"text":"🚀 Pro — $39/мес","callback_data":"buy_pro"}],
         [{"text":t("back_btn",uid),"callback_data":"dashboard"}],
     ]}
 
@@ -509,8 +509,9 @@ def on_callback(uid, chat_id, msg_id, data, cq_id, username, name):
     elif data == "plans":
         lang = user.get("lang","ru")
         plans_text = {
-            "ru":"💰 *Тарифы Zevo*\n\n🆓 *Free* — бесплатно\n  • 100 сообщений/мес\n\n⚡ *Starter* — $29/мес\n  • 1 000 сообщений\n  • 3 бота\n\n🚀 *Pro* — $79/мес\n  • Безлимит\n  • Кастомный AI",
-            "en":"💰 *Zevo Plans*\n\n🆓 *Free*\n  • 100 msg/mo\n\n⚡ *Starter* — $29/mo\n  • 1,000 msg\n  • 3 bots\n\n🚀 *Pro* — $79/mo\n  • Unlimited\n  • Custom AI",
+            "ru":"💰 *Тарифы Zevo*\n\n🆓 *Free* — бесплатно\n  • 30 дней пробный период\n  • Полный функционал\n\n⚡ *Basic* — $19/мес\n  • Бот работает 24/7\n  • Мы следим за работой\n  • Обновление данных\n\n🚀 *Pro* — $39/мес\n  • Всё из Basic\n  • Умный AI\n  • Ежемесячный отчёт\n  • Приоритетная поддержка",
+            "en":"💰 *Zevo Plans*\n\n🆓 *Free*\n  • 30 day trial\n  • Full features\n\n⚡ *Basic* — $19/mo\n  • Bot works 24/7\n  • We monitor it\n  • Data updates\n\n🚀 *Pro* — $39/mo\n  • Everything in Basic\n  • Smart AI\n  • Monthly report\n  • Priority support",
+            "uz":"💰 *Zevo Tariflari*\n\n🆓 *Free* — bepul\n  • 30 kunlik sinov\n\n⚡ *Basic* — $19/oy\n  • Bot 24/7 ishlaydi\n  • Monitoring\n\n🚀 *Pro* — $39/oy\n  • Aqlli AI\n  • Oylik hisobot",
         }.get(lang, "💰 *Plans*\n\n🆓 Free | ⚡ $29 | 🚀 $79")
         edit(chat_id, msg_id, plans_text, {"inline_keyboard":[[{"text":t("register_btn",uid),"callback_data":"register"}],[{"text":t("back_btn",uid),"callback_data":"start"}]]})
 
@@ -634,11 +635,11 @@ def on_callback(uid, chat_id, msg_id, data, cq_id, username, name):
         if not user.get("registered"): return
         p = PLANS[user.get("plan","free")]
         edit(chat_id, msg_id,
-             f"💰 {p['emoji']} *{p['name']}* — {p['limit']} msg/mo",
+             f"💰 {p['emoji']} *{p['name']}* — {9999} msg/mo",
              kb_plans_upgrade(uid))
 
-    elif data in ("buy_starter","buy_pro"):
-        plan_key = "starter" if data == "buy_starter" else "pro"
+    elif data in ("buy_basic","buy_pro"):
+        plan_key = "basic" if data == "buy_basic" else "pro"
         plan = PLANS[plan_key]
         cards = ""
         if CARD_VISA: cards += f"💳 *Visa:* `{CARD_VISA}`\n"
